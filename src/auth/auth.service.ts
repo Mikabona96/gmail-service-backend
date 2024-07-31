@@ -27,11 +27,6 @@ export class AuthService {
 
   async revokeToken(token: string): Promise<void> {
     const url = `https://oauth2.googleapis.com/revoke?token=${token}`;
-    // await axios.post(url, null, {
-    //   headers: {
-    //     'Content-type': 'application/x-www-form-urlencoded',
-    //   },
-    // });
 
     try {
       await fetch(url, {

@@ -12,7 +12,7 @@ export class AuthController {
 
   @Get('hello')
   getHello() {
-    return 'Hello, please log in!';
+    return 'Hello!';
   }
 
   @Get()
@@ -48,7 +48,6 @@ export class AuthController {
     await this.authService.revokeToken(accessToken);
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
-    res.redirect('/auth/hello');
     res.status(200).send('Logged out');
   }
 }
