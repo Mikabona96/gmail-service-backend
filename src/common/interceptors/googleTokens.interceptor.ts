@@ -5,34 +5,38 @@ import {
   CallHandler,
   HttpException,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { catchError, Observable, throwError } from 'rxjs';
-import { RefreshTokenService } from '../providers/refreshToken.service';
+import { GenerateAccessTokenService } from '../providers/generateAccessToken.service';
 
 @Injectable()
 export class RefreshTokenInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    //+ Before controller ===============Start=================
+
     const request = context.switchToHttp().getRequest();
-    const accessToken = request.cookies['access_token'] || '';
+    const response = context.switchToHttp().getResponse();
     const refreshToken = request.cookies['refresh_token'] || '';
 
-    const refreshTokenService = new RefreshTokenService(
-      accessToken,
-      refreshToken,
-    );
+    //+ Before controller ===============End=================
     return next.handle().pipe(
       catchError((err) => {
-        if (err.response?.status === 401) {
-          const response = context.switchToHttp().getResponse();
+        //$ After error in controller ===============================
+        if (err.status === 401) {
           if (!refreshToken) {
-            response.redirect('/messages/error');
+            throw new UnauthorizedException('No refresh token');
           }
-          return refreshTokenService
-            .verifyAccessToken(response)
-            .then((newAccessToken) => {
-              response.cookie('access_token', newAccessToken, { secure: true });
+          const generateAccessTokenService = new GenerateAccessTokenService(
+            refreshToken,
+          );
+          return generateAccessTokenService
+            .getAccessToken()
+            .then((access_token) => {
+              response.cookie('access_token', access_token, {
+                secure: true,
+              });
               response.redirect('/messages/list');
-              return next.handle();
             });
         }
         return throwError(
