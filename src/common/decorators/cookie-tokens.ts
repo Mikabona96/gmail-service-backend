@@ -12,6 +12,6 @@ export const Tokens = createParamDecorator(
         refresh_token: request.cookies['refresh_token'],
       };
     }
-    return request.cookies[data];
+    return request.cookies[data] || '';
   },
 );
