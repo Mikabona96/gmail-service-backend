@@ -1,10 +1,8 @@
 import { GoogleOAuthGuard } from '../guards/google-oauth.guard';
 import { Controller, Get, Request, Response, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import {
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-} from 'express';
+import { Response as ExpressResponse } from 'express';
+import { Tokens } from 'src/common/decorators/cookie-tokens';
 
 @Controller('auth')
 export class AuthController {
@@ -41,10 +39,9 @@ export class AuthController {
 
   @Get('logout')
   async logout(
-    @Request() req: ExpressRequest,
+    @Tokens('access_token') accessToken: string,
     @Response() res: ExpressResponse,
   ): Promise<void> {
-    const accessToken = req.cookies['access_token'] || '';
     await this.authService.revokeToken(accessToken);
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
