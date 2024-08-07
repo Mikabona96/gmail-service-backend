@@ -4,14 +4,33 @@ import { google } from 'googleapis';
 @Injectable()
 export class MessagesService {
   //TODO add pageToken props to getMessages
-  async getMessages(accessToken: string) {
+  labelIds = [
+    'INBOX',
+    'SPAM',
+    'TRASH',
+    'UNREAD',
+    'STARRED',
+    'IMPORTANT',
+    'SENT',
+    'DRAFT',
+    'CATEGORY_PERSONAL',
+    'CATEGORY_SOCIAL',
+    'CATEGORY_PROMOTIONS',
+    'CATEGORY_UPDATES',
+    'CATEGORY_FORUMS',
+  ];
+  async getMessages(
+    accessToken: string,
+    { labelIds, pageToken }: { labelIds?: string[]; pageToken?: string },
+  ) {
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: accessToken });
 
     const gmail = google.gmail({ version: 'v1', auth });
     const res = await gmail.users.messages.list({
       userId: 'me',
-      pageToken: '',
+      pageToken,
+      labelIds,
     });
 
     const decodeBase64 = (encoded = '') => {

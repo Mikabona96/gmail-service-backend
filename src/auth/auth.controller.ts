@@ -9,7 +9,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Get('hello')
-  getHello() {
+  getHello(@Request() req) {
     return 'Hello!';
   }
 

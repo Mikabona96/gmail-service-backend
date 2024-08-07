@@ -25,7 +25,9 @@ export class RefreshTokenInterceptor implements NestInterceptor {
         //$ After error in controller ===============================
         if (err.status === 401) {
           if (!refreshToken) {
-            throw new UnauthorizedException('No refresh token');
+            throw new UnauthorizedException(
+              "No refresh token, It seems that you're logged out!",
+            );
           }
           const generateAccessTokenService = new GenerateAccessTokenService(
             refreshToken,
