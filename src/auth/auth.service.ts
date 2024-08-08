@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 type ReturnType = {
   message: string;
@@ -23,6 +23,25 @@ export class AuthService {
       message: 'User information from google',
       user: req.user,
     };
+  }
+
+  async getInfo(access_token: string) {
+    try {
+      const resp = await fetch(
+        'https://www.googleapis.com/oauth2/v1/userinfo',
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        },
+      );
+      return resp.json();
+    } catch (error) {
+      throw new HttpException(
+        'Something went wrong...',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   async revokeToken(token: string): Promise<void> {

@@ -16,7 +16,10 @@ export class VerifyAccessTokenService {
     });
     this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+      scope: [
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://mail.google.com/',
+      ],
     });
     this.ACCESS_TOKEN = ACCESS_TOKEN;
   }

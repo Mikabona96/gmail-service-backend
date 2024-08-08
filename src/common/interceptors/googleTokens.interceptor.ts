@@ -36,7 +36,8 @@ export class RefreshTokenInterceptor implements NestInterceptor {
             .getAccessToken()
             .then((access_token) => {
               response.cookie('access_token', access_token, {
-                secure: true,
+                secure: false,
+                httpOnly: true,
               });
               response.redirect('/messages/list');
             });

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Param,
   Query,
   UnauthorizedException,
   UseInterceptors,
@@ -9,7 +10,10 @@ import { MessagesService } from './messages.service';
 import { Tokens } from 'src/common/decorators/cookie-tokens';
 import { RefreshTokenInterceptor } from 'src/common/interceptors/googleTokens.interceptor';
 import { VerifyAccessTokenService } from 'src/common/providers/verifyAccessToken.service';
-import { MessagesSearchParamsDto } from './dto/search-params.dto';
+import {
+  MessageIdSearchParamDto,
+  MessagesSearchParamsDto,
+} from './dto/search-params.dto';
 
 @Controller('messages')
 export class MessagesController {
@@ -33,6 +37,45 @@ export class MessagesController {
       throw new UnauthorizedException('Please refresh access_token!');
     }
   }
+
+  @Get('to-trash') //+ send message to trash not deleting!
+  async toTrashMessage(
+    @Tokens('access_token') access_token: string,
+    @Query() query: MessageIdSearchParamDto,
+  ) {
+    const { id } = query;
+    return await this.messagesService.toTrashMessage(
+      access_token,
+      id as string,
+    );
+  }
+
+  @Get('to-spam') //+ send message to spam!
+  async toSpamMessage(
+    @Tokens('access_token') access_token: string,
+    @Query() query: MessageIdSearchParamDto,
+  ) {
+    const { id } = query;
+    return await this.messagesService.toSpamMessage(access_token, id as string);
+  }
+
+  @Get('to-unread') //+ send message to spam!
+  async markUnread(
+    @Tokens('access_token') access_token: string,
+    @Query() query: MessageIdSearchParamDto,
+  ) {
+    const { id } = query;
+    return await this.messagesService.markUnread(access_token, id as string);
+  }
+
+  @Get(':id')
+  async getMessage(
+    @Tokens('access_token') access_token: string,
+    @Param() { id }: { id: string },
+  ) {
+    return await this.messagesService.getMessage(access_token, id as string);
+  }
+
   @Get('error')
   errorMessage() {
     throw new UnauthorizedException('Please sign in!');

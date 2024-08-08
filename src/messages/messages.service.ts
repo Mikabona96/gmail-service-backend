@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { google } from 'googleapis';
 
 @Injectable()
@@ -54,19 +54,21 @@ export class MessagesService {
       }
 
       //+ Modified headers ==================Start================
-      const modifiedHeaders = messageRes.data.payload.headers.filter(
-        (header) => {
+      const modifiedHeaders = messageRes.data.payload.headers.reduce(
+        (acc, next) => {
           if (
-            header.name === 'Date' ||
-            header.name === 'Subject' ||
-            header.name === 'From' ||
-            header.name === 'To'
-          )
-            return header;
+            next.name === 'Subject' ||
+            next.name === 'From' ||
+            next.name === 'To' ||
+            next.name === 'Date'
+          ) {
+            acc[next.name] = next.value;
+          }
+          return acc;
         },
+        {},
       );
 
-      messageResData.payload.headers = modifiedHeaders;
       //+ Modified headers ==================End==================
 
       let message = '';
@@ -107,8 +109,8 @@ export class MessagesService {
         id: messageResData.id,
         threadId: messageResData.threadId,
         labelIds: messageResData.labelIds,
-        snippet: messageResData.snippet,
-        headers: messageResData.payload.headers,
+        snippet: messageResData.snippet.trim(),
+        headers: modifiedHeaders,
         sizeEstimate: messageResData.sizeEstimate,
         historyId: messageResData.historyId,
         internalDate: messageResData.internalDate,
@@ -122,7 +124,84 @@ export class MessagesService {
 
     const resolvedMessages = await Promise.all(messagePromises);
     //$ Add next page token
-    return [{ nextPageToken: res.data.nextPageToken }, ...resolvedMessages];
+    return {
+      nextPageToken: res.data.nextPageToken,
+      messages: [...resolvedMessages],
+    };
     // return res.data.messages;
+  }
+
+  async toTrashMessage(access_token: string, id: string) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+      const res = await gmail.users.messages.trash({
+        userId: 'me',
+        id,
+      });
+      return res.data;
+    } catch (error) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async toSpamMessage(access_token: string, id: string) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+      const res = await gmail.users.messages.modify({
+        userId: 'me',
+        id,
+        requestBody: {
+          addLabelIds: ['SPAM'],
+          removeLabelIds: [],
+        },
+      });
+      return res.data;
+    } catch (error) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async markUnread(access_token: string, id: string) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+      const res = await gmail.users.messages.modify({
+        userId: 'me',
+        id,
+        requestBody: {
+          addLabelIds: ['UNREAD'],
+          removeLabelIds: [],
+        },
+      });
+      return res.data;
+    } catch (error) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
+  }
+  async getMessage(access_token: string, id: string) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    console.log('getMessage....');
+
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+      const res = await gmail.users.messages.get({
+        userId: 'me',
+        id,
+      });
+      console.log('🚀 ~ MessagesService ~ getMessage ~ res:', res.data);
+      return res.data;
+    } catch (error) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
   }
 }

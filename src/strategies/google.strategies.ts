@@ -13,6 +13,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         'email',
         'profile',
         'https://www.googleapis.com/auth/gmail.readonly',
+        'https://mail.google.com/',
       ],
     });
   }
