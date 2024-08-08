@@ -22,6 +22,7 @@ export class GenerateAccessTokenService {
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://mail.google.com/',
+        'https://www.googleapis.com/auth/gmail.modify',
       ],
     });
   }

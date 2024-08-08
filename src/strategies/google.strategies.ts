@@ -14,6 +14,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         'profile',
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://mail.google.com/',
+        'https://www.googleapis.com/auth/gmail.modify',
       ],
     });
   }

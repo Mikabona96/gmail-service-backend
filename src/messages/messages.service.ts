@@ -221,9 +221,37 @@ export class MessagesService {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
     }
   }
+
+  async getAttachment(access_token: string, id: string, attachmentId: string) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+    const res = await gmail.users.messages.attachments.get({
+      userId: 'me',
+      messageId: id,
+      id: attachmentId,
+    });
+    function convertBase64UrlToBase64(base64Url: string) {
+      let base64 = base64Url.replace(/_/g, '/').replace(/-/g, '+');
+      switch (base64.length % 4) {
+        case 2:
+          base64 += '==';
+          break;
+        case 3:
+          base64 += '=';
+          break;
+      }
+      return `${base64}`;
+    }
+
+    return convertBase64UrlToBase64(res.data.data);
+  }
+
   async getMessage(access_token: string, id: string) {
     try {
       await this.markAsRead(access_token, id);
+      // await this.getAttachment(access_token, id);
       const res = await this.getOneMessage({ id, access_token });
       return res;
     } catch (error) {

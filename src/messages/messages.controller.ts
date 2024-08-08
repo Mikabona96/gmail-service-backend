@@ -75,6 +75,16 @@ export class MessagesController {
   ) {
     return await this.messagesService.getMessage(access_token, id as string);
   }
+  @Get('attachment/:id')
+  async getAttachment(
+    @Tokens('access_token') access_token: string,
+    @Query() query: MessageIdSearchParamDto,
+    @Param() { id }: { id: string },
+  ) {
+    console.log(id);
+    return await this.messagesService.getAttachment(access_token, id, query.id);
+    return id;
+  }
 
   @Get('error')
   errorMessage() {

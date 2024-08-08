@@ -19,6 +19,7 @@ export class VerifyAccessTokenService {
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
         'https://mail.google.com/',
+        'https://www.googleapis.com/auth/gmail.modify',
       ],
     });
     this.ACCESS_TOKEN = ACCESS_TOKEN;
