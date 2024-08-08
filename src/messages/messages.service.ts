@@ -74,7 +74,7 @@ export class MessagesService {
 
     //$ Combine parts of message ================Start===============
     const parts = payload.parts || [];
-    const attachments = [];
+    let attachments = [];
 
     parts.forEach((part) => {
       if (part.body && part.body.attachmentId) {
@@ -94,6 +94,21 @@ export class MessagesService {
       message += decodeBase64(part.body.data);
     });
 
+    if (attachments.length) {
+      attachments = attachments.map(async (att) => {
+        const attachmentString = await this.getAttachment(
+          access_token,
+          id,
+          att.attachment,
+        );
+
+        return {
+          ...att,
+          attachment: attachmentString,
+        };
+      });
+    }
+
     //$ Combine parts of message ================End================
     let htmlPage = '';
     if (message.split('<html')[1]) {
@@ -110,7 +125,7 @@ export class MessagesService {
       historyId: messageResData.historyId,
       internalDate: messageResData.internalDate,
       htmlPage,
-      attachments,
+      attachments: await Promise.all(attachments),
     };
 
     return returnedObject;
