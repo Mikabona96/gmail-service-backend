@@ -273,4 +273,100 @@ export class MessagesService {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
     }
   }
+
+  async sendReply(
+    access_token: string,
+    to: string,
+    subject: string,
+    text: string,
+    messageId: string,
+    threadId: string,
+  ) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const emailContent = [
+      `To: ${to}`,
+      `Subject: Re: ${subject}`,
+      `In-Reply-To: <${messageId}>`,
+      `References: <${messageId}>`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/plain; charset="UTF-8"`,
+      `Content-Transfer-Encoding: 7bit`,
+      '',
+      text,
+    ].join('\n');
+
+    const encodedMessage = Buffer.from(emailContent)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    try {
+      const result = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage,
+          threadId: threadId, // Используем threadId для ответа в той же ветке
+        },
+      });
+
+      return result.data;
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      throw error;
+    }
+  }
+
+  async sendMessage(access_token: string) {
+    console.log('in message send');
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const emailContent = [
+      // `To: ${to}`,
+      `To: dmitriygolubapk+1@gmail.com`,
+      // `Subject: ${subject}`,
+      `Subject: Got your message`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/plain; charset="UTF-8"`,
+      `Content-Transfer-Encoding: 7bit`,
+      '',
+      // text,
+      'Im fine thanks',
+      //+ Attachment ===== start =======
+      // '',
+      // `--boundary_string`,
+      // `Content-Type: application/octet-stream; name="${attachmentName}"`,
+      // `Content-Disposition: attachment; filename="${attachmentName}"`,
+      // `Content-Transfer-Encoding: base64`,
+      // '',
+      // attachmentContent, //$ Base64 string (attachment(img/video to string base64))
+      // '',
+      // `--boundary_string--`,
+      //+ Attachment ===== end =======
+    ].join('\n');
+
+    const encodedMessage = Buffer.from(emailContent)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    try {
+      const result = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage,
+        },
+      });
+
+      return result.data;
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 }

@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
+  Post,
   Query,
   UnauthorizedException,
   UseInterceptors,
@@ -83,7 +85,36 @@ export class MessagesController {
   ) {
     console.log(id);
     return await this.messagesService.getAttachment(access_token, id, query.id);
-    return id;
+  }
+
+  @Get('send/message')
+  async sendMessage(@Tokens('access_token') access_token: string) {
+    return await this.messagesService.sendMessage(access_token);
+  }
+
+  @Post('message/reply')
+  async replyMessage(
+    @Tokens('access_token') access_token: string,
+    @Body()
+    body:
+      | {
+          to: string;
+          subject: string;
+          text: string;
+          messageId: string;
+          threadId;
+        }
+      | any,
+  ) {
+    const { messageId, subject, text, to, threadId } = body;
+    return await this.messagesService.sendReply(
+      access_token,
+      to,
+      subject,
+      text,
+      messageId,
+      threadId,
+    );
   }
 
   @Get('error')
