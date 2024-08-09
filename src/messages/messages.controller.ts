@@ -6,11 +6,9 @@ import {
   Post,
   Query,
   UnauthorizedException,
-  UseInterceptors,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { Tokens } from 'src/common/decorators/cookie-tokens';
-import { RefreshTokenInterceptor } from 'src/common/interceptors/googleTokens.interceptor';
 import { VerifyAccessTokenService } from 'src/common/providers/verifyAccessToken.service';
 import {
   MessageIdSearchParamDto,
@@ -21,7 +19,6 @@ import {
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
   @Get('list')
-  @UseInterceptors(RefreshTokenInterceptor)
   async getMessages(
     @Tokens('access_token') access_token: string,
     @Query() query: MessagesSearchParamsDto,
