@@ -7,15 +7,16 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, from, Observable, switchMap, throwError } from 'rxjs';
 import { GenerateAccessTokenService } from '../providers/generateAccessToken.service';
+import { Request } from 'express';
 
 @Injectable()
 export class RefreshTokenInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     //+ Before controller ===============Start=================
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest() as Request;
     const response = context.switchToHttp().getResponse();
     const refreshToken = request.cookies['refresh_token'] || '';
 
@@ -32,15 +33,20 @@ export class RefreshTokenInterceptor implements NestInterceptor {
           const generateAccessTokenService = new GenerateAccessTokenService(
             refreshToken,
           );
-          return generateAccessTokenService
-            .getAccessToken()
-            .then((access_token) => {
-              response.cookie('access_token', access_token, {
+          return from(generateAccessTokenService.getAccessToken()).pipe(
+            switchMap((accessToken: string) => {
+              request.cookies.access_token = accessToken;
+
+              response.cookie('access_token', accessToken, {
                 secure: false,
                 httpOnly: true,
               });
-              response.redirect('/messages/list');
-            });
+              return next.handle();
+            }),
+            catchError((retryError) => {
+              return throwError(() => retryError);
+            }),
+          );
         }
         return throwError(
           () =>

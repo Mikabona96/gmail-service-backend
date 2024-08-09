@@ -6,6 +6,7 @@ import {
   Response,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -14,6 +15,7 @@ import {
 } from 'express';
 import { Tokens } from 'src/common/decorators/cookie-tokens';
 import { VerifyAccessTokenService } from 'src/common/providers/verifyAccessToken.service';
+import { RefreshTokenInterceptor } from 'src/common/interceptors/googleTokens.interceptor';
 
 @Controller('auth')
 export class AuthController {
@@ -56,6 +58,7 @@ export class AuthController {
   }
 
   @Get('info')
+  @UseInterceptors(RefreshTokenInterceptor)
   async getInfo(@Tokens('access_token') access_token: string) {
     const verifyATService = new VerifyAccessTokenService(access_token);
     const verified = await verifyATService.verifyAccessToken();
