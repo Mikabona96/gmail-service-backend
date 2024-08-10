@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { google } from 'googleapis';
+import { MessageType } from './types';
 
 @Injectable()
 export class MessagesService {
@@ -31,6 +32,7 @@ export class MessagesService {
       const decodedBuffer = Buffer.from(encoded, 'base64');
       return decodedBuffer.toString('utf-8');
     };
+
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token });
 
@@ -55,9 +57,14 @@ export class MessagesService {
           next.name === 'Subject' ||
           next.name === 'From' ||
           next.name === 'To' ||
-          next.name === 'Date'
+          next.name === 'Date' ||
+          next.name === 'Message-ID' ||
+          next.name === 'References' ||
+          next.name === 'In-Reply-To'
         ) {
           acc[next.name] = next.value;
+        } else if (next.name === 'Message-Id') {
+          acc['Message-ID'] = next.value;
         }
         return acc;
       },
@@ -281,21 +288,45 @@ export class MessagesService {
     text: string,
     messageId: string,
     threadId: string,
+    originalMessage: MessageType,
   ) {
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: access_token });
     const gmail = google.gmail({ version: 'v1', auth });
 
+    function formatDate(dateStr: string): string {
+      const date = new Date(dateStr);
+
+      return date
+        .toLocaleString('en-US', {
+          weekday: 'short',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+        .replace(/,\s(\d{2}:\d{2}).*/, ' $1');
+    }
+
+    const formattedDate = formatDate(originalMessage.headers.Date);
+
+    const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
+
+    const mailto = originalMessage.headers.To.match(/<([^>]+)>/)[1];
+
+    const body = `
+    <p>${text}</p>
+    <div style="margin-top:20px; border-top:1px solid #ccc; padding-top:10px;">
+      <p>On ${formattedDate}, ${mailto} wrote:</p>
+      <blockquote style="margin:0; border-left:1px solid #ccc; padding-left:10px; color:#555;">
+        ${originalMessage.snippet}
+      </blockquote>
+    </div>
+  `;
+
     const emailContent = [
-      `To: ${to}`,
-      `Subject: Re: ${subject}`,
-      `In-Reply-To: <${messageId}>`,
-      `References: <${messageId}>`,
-      `MIME-Version: 1.0`,
-      `Content-Type: text/plain; charset="UTF-8"`,
-      `Content-Transfer-Encoding: 7bit`,
-      '',
-      text,
+      `From: ${to}\r\nTo: ${to}\r\nSubject: ${replySubject}\r\nIn-Reply-To: ${messageId}\r\nReferences: ${messageId}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${body}`,
     ].join('\n');
 
     const encodedMessage = Buffer.from(emailContent)
@@ -309,7 +340,7 @@ export class MessagesService {
         userId: 'me',
         requestBody: {
           raw: encodedMessage,
-          threadId: threadId, // Используем threadId для ответа в той же ветке
+          threadId: threadId,
         },
       });
 

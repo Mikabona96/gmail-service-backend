@@ -14,6 +14,7 @@ import {
   MessageIdSearchParamDto,
   MessagesSearchParamsDto,
 } from './dto/search-params.dto';
+import { MessageType } from './types';
 
 @Controller('messages')
 export class MessagesController {
@@ -99,11 +100,12 @@ export class MessagesController {
           subject: string;
           text: string;
           messageId: string;
-          threadId;
+          threadId: string;
+          originalMessage: MessageType;
         }
       | any,
   ) {
-    const { messageId, subject, text, to, threadId } = body;
+    const { messageId, subject, text, to, threadId, originalMessage } = body;
     return await this.messagesService.sendReply(
       access_token,
       to,
@@ -111,6 +113,7 @@ export class MessagesController {
       text,
       messageId,
       threadId,
+      originalMessage,
     );
   }
 
