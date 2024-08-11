@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { google } from 'googleapis';
+import { gmail_v1, google } from 'googleapis';
 import { MessageType } from './types';
 
 @Injectable()
@@ -279,6 +279,70 @@ export class MessagesService {
     } catch (error) {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async getMessageFomThread(messageRes: gmail_v1.Schema$Message) {
+    const decodeBase64 = (encoded = '') => {
+      const decodedBuffer = Buffer.from(encoded, 'base64');
+      return decodedBuffer.toString('utf-8');
+    };
+
+    const payload = messageRes.payload;
+
+    if (!payload) {
+      console.log('No payload for this message!');
+      return;
+    }
+
+    let message = '';
+
+    if (payload.body && payload.body.data) {
+      message += decodeBase64(payload.body.data);
+    }
+
+    //$ Combine parts of message ================Start===============
+    const parts = payload.parts || [];
+    // let attachments = []; //Todo: Attachments logic
+
+    parts.forEach((part) => {
+      if (part.body && part.body.attachmentId) {
+        //Todo: Attachments logic
+      }
+      if (part.parts) {
+        part.parts.forEach((p) => {
+          message += decodeBase64(p.body.data);
+        });
+      }
+      message += decodeBase64(part.body.data);
+    });
+
+    return { ...messageRes, decodedValue: message };
+  }
+
+  async getThread({
+    access_token,
+    threadId,
+  }: {
+    access_token: string;
+    threadId: string;
+  }) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const res = await gmail.users.threads.get({
+      userId: 'me',
+      id: threadId,
+    });
+
+    const filtered = res.data.messages.filter((msg) => msg.id !== threadId);
+
+    const mapped = filtered.map(
+      async (msg) => await this.getMessageFomThread(msg),
+    );
+
+    return await Promise.all(mapped);
   }
 
   async sendReply(access_token: string, text: string, messageId: string) {

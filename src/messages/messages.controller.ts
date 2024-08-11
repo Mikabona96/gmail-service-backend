@@ -49,7 +49,7 @@ export class MessagesController {
     );
   }
 
-  @Get('to-spam') //+ send message to spam!
+  @Get('to-spam')
   async toSpamMessage(
     @Tokens('access_token') access_token: string,
     @Query() query: MessageIdSearchParamDto,
@@ -58,7 +58,7 @@ export class MessagesController {
     return await this.messagesService.toSpamMessage(access_token, id as string);
   }
 
-  @Get('to-unread') //+ send message to spam!
+  @Get('to-unread')
   async markUnread(
     @Tokens('access_token') access_token: string,
     @Query() query: MessageIdSearchParamDto,
@@ -112,6 +112,17 @@ export class MessagesController {
     } else {
       throw new UnauthorizedException('Please refresh access_token!');
     }
+  }
+
+  @Get('thread/:id') //+ send message to spam!
+  async getThread(
+    @Tokens('access_token') access_token: string,
+    @Param() { id }: { id: string },
+  ) {
+    return this.messagesService.getThread({
+      access_token,
+      threadId: id,
+    });
   }
 
   @Get('error')
