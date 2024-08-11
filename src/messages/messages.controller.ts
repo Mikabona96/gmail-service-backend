@@ -106,15 +106,22 @@ export class MessagesController {
       | any,
   ) {
     const { messageId, subject, text, to, threadId, originalMessage } = body;
-    return await this.messagesService.sendReply(
-      access_token,
-      to,
-      subject,
-      text,
-      messageId,
-      threadId,
-      originalMessage,
-    );
+
+    const verifyATService = new VerifyAccessTokenService(access_token);
+    const verified = await verifyATService.verifyAccessToken();
+    if (verified) {
+      return await this.messagesService.sendReply(
+        access_token,
+        to,
+        subject,
+        text,
+        messageId,
+        threadId,
+        originalMessage,
+      );
+    } else {
+      throw new UnauthorizedException('Please refresh access_token!');
+    }
   }
 
   @Get('error')

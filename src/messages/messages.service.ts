@@ -314,19 +314,39 @@ export class MessagesService {
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
     const mailto = originalMessage.headers.To.match(/<([^>]+)>/)[1];
+    const From = originalMessage.headers.From.match(/(.*)\s<(.+)>/);
+    const name = From ? From[1].trim() : ''; // "Dan Gold"
+    const email = From ? From[2] : '';
 
-    const body = `
-    <p>${text}</p>
-    <div style="margin-top:20px; border-top:1px solid #ccc; padding-top:10px;">
-      <p>On ${formattedDate}, ${mailto} wrote:</p>
-      <blockquote style="margin:0; border-left:1px solid #ccc; padding-left:10px; color:#555;">
-        ${originalMessage.snippet}
-      </blockquote>
+    //   const body = `
+    //   <p>${text}</p>
+    //   <div style="padding-top:10px;">
+    //     <p>On ${formattedDate}, ${mailto} wrote:</p>
+    //     <blockquote style="margin:0; border-left:1px solid #ccc; padding-left:10px; color:#555;">
+    //       ${originalMessage.snippet}
+    //     </blockquote>
+    //   </div>
+    // `;
+
+    const modifiedBody = `
+    <div dir="ltr">
+      <div dir="ltr">${text}</div>
+      <br>
+      <div class="gmail_quote">
+        <div dir="ltr" class="gmail_attr">${formattedDate}, ${name} &lt;${email}&gt;:
+          <br>
+        </div>
+        <blockquote class="gmail_quote" style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">
+          <div dir="ltr">${originalMessage.snippet}</div>
+          <div class="yj6qo"></div>
+          <div class="adL"></div>
+        </blockquote>
+      </div>
     </div>
-  `;
+`;
 
     const emailContent = [
-      `From: ${to}\r\nTo: ${to}\r\nSubject: ${replySubject}\r\nIn-Reply-To: ${messageId}\r\nReferences: ${messageId}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${body}`,
+      `From: ${to}\r\nTo: ${to}\r\nSubject: ${replySubject}\r\nIn-Reply-To: ${messageId}\r\nReferences: ${messageId}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${modifiedBody}`,
     ].join('\n');
 
     const encodedMessage = Buffer.from(emailContent)
