@@ -14,7 +14,6 @@ import {
   MessageIdSearchParamDto,
   MessagesSearchParamsDto,
 } from './dto/search-params.dto';
-import { MessageType } from './types';
 
 @Controller('messages')
 export class MessagesController {
@@ -96,28 +95,19 @@ export class MessagesController {
     @Body()
     body:
       | {
-          to: string;
-          subject: string;
           text: string;
           messageId: string;
-          threadId: string;
-          originalMessage: MessageType;
         }
       | any,
   ) {
-    const { messageId, subject, text, to, threadId, originalMessage } = body;
-
+    const { messageId, text } = body;
     const verifyATService = new VerifyAccessTokenService(access_token);
     const verified = await verifyATService.verifyAccessToken();
     if (verified) {
       return await this.messagesService.sendReply(
         access_token,
-        to,
-        subject,
         text,
         messageId,
-        threadId,
-        originalMessage,
       );
     } else {
       throw new UnauthorizedException('Please refresh access_token!');

@@ -281,18 +281,15 @@ export class MessagesService {
     }
   }
 
-  async sendReply(
-    access_token: string,
-    to: string,
-    subject: string,
-    text: string,
-    messageId: string,
-    threadId: string,
-    originalMessage: MessageType,
-  ) {
+  async sendReply(access_token: string, text: string, messageId: string) {
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: access_token });
     const gmail = google.gmail({ version: 'v1', auth });
+
+    const originalMessage = (await this.getOneMessage({
+      id: messageId,
+      access_token,
+    })) as MessageType;
 
     function formatDate(dateStr: string): string {
       const date = new Date(dateStr);
@@ -310,23 +307,13 @@ export class MessagesService {
     }
 
     const formattedDate = formatDate(originalMessage.headers.Date);
+    const subject = originalMessage.headers.Subject;
 
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
-    const mailto = originalMessage.headers.To.match(/<([^>]+)>/)[1];
     const From = originalMessage.headers.From.match(/(.*)\s<(.+)>/);
-    const name = From ? From[1].trim() : ''; // "Dan Gold"
+    const name = From ? From[1].trim() : '';
     const email = From ? From[2] : '';
-
-    //   const body = `
-    //   <p>${text}</p>
-    //   <div style="padding-top:10px;">
-    //     <p>On ${formattedDate}, ${mailto} wrote:</p>
-    //     <blockquote style="margin:0; border-left:1px solid #ccc; padding-left:10px; color:#555;">
-    //       ${originalMessage.snippet}
-    //     </blockquote>
-    //   </div>
-    // `;
 
     const modifiedBody = `
     <div dir="ltr">
@@ -346,7 +333,7 @@ export class MessagesService {
 `;
 
     const emailContent = [
-      `From: ${to}\r\nTo: ${to}\r\nSubject: ${replySubject}\r\nIn-Reply-To: ${messageId}\r\nReferences: ${messageId}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${modifiedBody}`,
+      `From: ${originalMessage.headers.To}\r\nTo: ${originalMessage.headers.From}\r\nSubject: ${replySubject}\r\nIn-Reply-To: ${originalMessage.headers['Message-ID']}\r\nReferences: ${originalMessage.headers['Message-ID']}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${modifiedBody}`,
     ].join('\n');
 
     const encodedMessage = Buffer.from(emailContent)
@@ -360,7 +347,7 @@ export class MessagesService {
         userId: 'me',
         requestBody: {
           raw: encodedMessage,
-          threadId: threadId,
+          threadId: originalMessage.threadId,
         },
       });
 
