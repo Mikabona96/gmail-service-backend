@@ -6,9 +6,10 @@ import { ConfigModule } from '@nestjs/config';
 import { MessagesModule } from './messages/messages.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { RefreshTokenInterceptor } from './common/interceptors/googleTokens.interceptor';
+import { AiModule } from './ai/ai.module';
 
 @Module({
-  imports: [AuthModule, ConfigModule.forRoot(), MessagesModule],
+  imports: [AuthModule, ConfigModule.forRoot(), MessagesModule, AiModule],
   controllers: [AppController],
   providers: [
     AppService,
