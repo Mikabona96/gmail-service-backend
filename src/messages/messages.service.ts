@@ -442,7 +442,10 @@ export class MessagesService {
     }
   }
 
-  async sendMessage(access_token: string) {
+  async sendMessage(
+    access_token: string,
+    { to, subject, message }: { to: string; subject: string; message: string },
+  ) {
     console.log('in message send');
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: access_token });
@@ -450,15 +453,14 @@ export class MessagesService {
 
     const emailContent = [
       // `To: ${to}`,
-      `To: dmitriygolubapk+1@gmail.com`,
-      // `Subject: ${subject}`,
-      `Subject: Got your message`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
       `MIME-Version: 1.0`,
       `Content-Type: text/plain; charset="UTF-8"`,
       `Content-Transfer-Encoding: 7bit`,
       '',
-      // text,
-      'Im fine thanks',
+      // message,
+      message,
       //+ Attachment ===== start =======
       // '',
       // `--boundary_string`,

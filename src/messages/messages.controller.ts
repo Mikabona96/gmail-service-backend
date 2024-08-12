@@ -100,9 +100,12 @@ export class MessagesController {
     return await this.messagesService.getAttachment(access_token, id, query.id);
   }
 
-  @Get('send/message')
-  async sendMessage(@Tokens('access_token') access_token: string) {
-    return await this.messagesService.sendMessage(access_token);
+  @Post('message/send')
+  async sendMessage(
+    @Tokens('access_token') access_token: string,
+    @Body() body: { to: string; subject: string; message: string },
+  ) {
+    return await this.messagesService.sendMessage(access_token, body);
   }
 
   @Post('message/reply')
