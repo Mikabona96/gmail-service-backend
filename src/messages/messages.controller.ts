@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -47,6 +48,21 @@ export class MessagesController {
       access_token,
       id as string,
     );
+  }
+
+  @Delete('delete-batch')
+  async toTrahBatch(
+    @Tokens('access_token') access_token: string,
+    @Body()
+    body: string[],
+  ) {
+    const verifyATService = new VerifyAccessTokenService(access_token);
+    const verified = await verifyATService.verifyAccessToken();
+    if (verified) {
+      return await this.messagesService.toTrashBatch(access_token, body);
+    } else {
+      throw new UnauthorizedException('Please refresh access_token!');
+    }
   }
 
   @Get('to-spam')

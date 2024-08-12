@@ -185,6 +185,26 @@ export class MessagesService {
     }
   }
 
+  async toTrashBatch(access_token: string, ids: string[]) {
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: access_token });
+
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+      const res = await gmail.users.messages.batchModify({
+        userId: 'me',
+        requestBody: {
+          ids,
+          addLabelIds: ['TRASH'],
+          removeLabelIds: [],
+        },
+      });
+      return res.data;
+    } catch (error) {
+      throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async toSpamMessage(access_token: string, id: string) {
     const auth = new google.auth.OAuth2();
     auth.setCredentials({ access_token: access_token });
