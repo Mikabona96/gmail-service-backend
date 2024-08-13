@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { Tokens } from 'src/common/decorators/cookie-tokens';
-import { VerifyAccessTokenService } from 'src/common/providers/verifyAccessToken.service';
 import {
   MessageIdSearchParamDto,
   MessagesSearchParamsDto,
@@ -19,23 +18,17 @@ import {
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
+
   @Get('list')
   async getMessages(
     @Tokens('access_token') access_token: string,
     @Query() query: MessagesSearchParamsDto,
   ) {
     const { category, page } = query;
-
-    const verifyATService = new VerifyAccessTokenService(access_token);
-    const verified = await verifyATService.verifyAccessToken();
-    if (verified) {
-      return await this.messagesService.getMessages(access_token, {
-        labelIds: (category && [category.toUpperCase()]) || [],
-        pageToken: page || '',
-      });
-    } else {
-      throw new UnauthorizedException('Please refresh access_token!');
-    }
+    return await this.messagesService.getMessages(access_token, {
+      labelIds: (category && [category.toUpperCase()]) || [],
+      pageToken: page || '',
+    });
   }
 
   @Get('to-trash') //+ send message to trash not deleting!
@@ -56,13 +49,7 @@ export class MessagesController {
     @Body()
     body: string[],
   ) {
-    const verifyATService = new VerifyAccessTokenService(access_token);
-    const verified = await verifyATService.verifyAccessToken();
-    if (verified) {
-      return await this.messagesService.toTrashBatch(access_token, body);
-    } else {
-      throw new UnauthorizedException('Please refresh access_token!');
-    }
+    return await this.messagesService.toTrashBatch(access_token, body);
   }
 
   @Get('to-spam')
@@ -120,17 +107,7 @@ export class MessagesController {
       | any,
   ) {
     const { messageId, text } = body;
-    const verifyATService = new VerifyAccessTokenService(access_token);
-    const verified = await verifyATService.verifyAccessToken();
-    if (verified) {
-      return await this.messagesService.sendReply(
-        access_token,
-        text,
-        messageId,
-      );
-    } else {
-      throw new UnauthorizedException('Please refresh access_token!');
-    }
+    return await this.messagesService.sendReply(access_token, text, messageId);
   }
 
   @Get('thread/:id') //+ send message to spam!

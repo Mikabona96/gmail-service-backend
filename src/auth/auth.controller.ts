@@ -1,34 +1,30 @@
 import { GoogleOAuthGuard } from '../guards/google-oauth.guard';
-import {
-  Controller,
-  Get,
-  Request,
-  Response,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Request, Response, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   Response as ExpressResponse,
   Request as ExpressRequest,
 } from 'express';
 import { Tokens } from 'src/common/decorators/cookie-tokens';
-import { VerifyAccessTokenService } from 'src/common/providers/verifyAccessToken.service';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Get('hello')
   getHello() {
     return 'Hello!';
   }
 
+  @Public()
   @Get()
   @UseGuards(GoogleOAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async googleAuth(@Request() req) {}
 
+  @Public()
   @Get('google-redirect')
   @UseGuards(GoogleOAuthGuard)
   googleAuthRedirect(
@@ -57,16 +53,11 @@ export class AuthController {
 
   @Get('info')
   async getInfo(@Tokens('access_token') access_token: string) {
-    const verifyATService = new VerifyAccessTokenService(access_token);
-    const verified = await verifyATService.verifyAccessToken();
-    if (verified) {
-      const resp = await this.authService.getInfo(access_token);
-      return resp;
-    } else {
-      throw new UnauthorizedException('Please refresh access_token!');
-    }
+    const resp = await this.authService.getInfo(access_token);
+    return resp;
   }
 
+  @Public()
   @Get('logout')
   async logout(
     @Tokens('access_token') accessToken: string,

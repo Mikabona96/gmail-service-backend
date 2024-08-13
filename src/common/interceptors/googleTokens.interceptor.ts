@@ -30,10 +30,10 @@ export class RefreshTokenInterceptor implements NestInterceptor {
               "No refresh token, It seems that you're logged out!",
             );
           }
-          const generateAccessTokenService = new GenerateAccessTokenService(
-            refreshToken,
-          );
-          return from(generateAccessTokenService.getAccessToken()).pipe(
+          const generateAccessTokenService = new GenerateAccessTokenService();
+          return from(
+            generateAccessTokenService.getAccessToken(refreshToken),
+          ).pipe(
             switchMap((accessToken: string) => {
               request.cookies.access_token = accessToken;
 

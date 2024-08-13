@@ -3,17 +3,13 @@ import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 
 export class VerifyAccessTokenService {
   private oauth2Client: OAuth2Client;
-  private ACCESS_TOKEN: string;
 
-  constructor(ACCESS_TOKEN: string) {
+  constructor() {
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
       process.env.GOOGLE_REDIRECT_URL,
     );
-    this.oauth2Client.setCredentials({
-      access_token: ACCESS_TOKEN,
-    });
     this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
@@ -24,15 +20,16 @@ export class VerifyAccessTokenService {
         'https://www.googleapis.com/auth/gmail.compose',
       ],
     });
-    this.ACCESS_TOKEN = ACCESS_TOKEN;
   }
 
-  async verifyAccessToken() {
+  async verifyAccessToken(access_token: string) {
+    this.oauth2Client.setCredentials({
+      access_token: access_token,
+    });
     try {
-      await this.oauth2Client.getTokenInfo(this.ACCESS_TOKEN);
+      await this.oauth2Client.getTokenInfo(access_token);
       return true;
     } catch (error) {
-      console.log('Error access_token is expired or invalid!');
       return false;
     }
   }
