@@ -330,10 +330,15 @@ export class MessagesService {
       }
       if (part.parts) {
         part.parts.forEach((p) => {
-          message += decodeBase64(p.body.data);
+          if (p.mimeType === 'text/html') {
+            message += decodeBase64(p.body.data);
+          }
+          return;
         });
       }
-      message += decodeBase64(part.body.data);
+      if (part.mimeType === 'text/html') {
+        message += decodeBase64(part.body.data);
+      }
     });
 
     return { ...messageRes, decodedValue: message };
@@ -375,6 +380,15 @@ export class MessagesService {
       access_token,
     })) as MessageType;
 
+    const messageFromThread = await this.getThread({
+      access_token,
+      threadId: originalMessage.threadId,
+    });
+
+    const originalText = messageFromThread.find(
+      (m) => m.id === originalMessage.id,
+    ).decodedValue;
+
     function formatDate(dateStr: string): string {
       const date = new Date(dateStr);
 
@@ -400,21 +414,21 @@ export class MessagesService {
     const email = From ? From[2] : '';
 
     const modifiedBody = `
-    <div dir="ltr">
-      <div dir="ltr">${text}</div>
-      <br>
-      <div class="gmail_quote">
-        <div dir="ltr" class="gmail_attr">${formattedDate}, ${name} &lt;${email}&gt;:
+        <div dir="ltr">
+          <div dir="ltr">${text}</div>
           <br>
+          <div class="gmail_quote">
+            <div dir="ltr" class="gmail_attr">${formattedDate}, ${name} &lt;${email}&gt;:
+              <br>
+            </div>
+            <blockquote class="gmail_quote" style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">
+              <div dir="ltr">${originalText}</div>
+              <div class="yj6qo"></div>
+              <div class="adL"></div>
+            </blockquote>
+          </div>
         </div>
-        <blockquote class="gmail_quote" style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">
-          <div dir="ltr">${originalMessage.snippet}</div>
-          <div class="yj6qo"></div>
-          <div class="adL"></div>
-        </blockquote>
-      </div>
-    </div>
-`;
+    `;
 
     const emailContent = [
       `From: ${originalMessage.headers.To}\r\nTo: ${originalMessage.headers.From}\r\nSubject: ${replySubject}\r\nIn-Reply-To: ${originalMessage.headers['Message-ID']}\r\nReferences: ${originalMessage.headers['Message-ID']}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${modifiedBody}`,
