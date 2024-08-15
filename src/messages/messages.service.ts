@@ -1,9 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { gmail_v1, google } from 'googleapis';
+import { gmail_v1 } from 'googleapis';
 import { MessageType } from './types';
+import { GmailService } from 'src/common/providers/gmail.service';
 
 @Injectable()
 export class MessagesService {
+  constructor(private readonly gmailService: GmailService) {}
   //TODO add pageToken props to getMessages
   labelIds = [
     'INBOX',
@@ -32,15 +34,12 @@ export class MessagesService {
       const decodedBuffer = Buffer.from(encoded, 'base64');
       return decodedBuffer.toString('utf-8');
     };
-
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
-    const messageRes = await gmail.users.messages.get({
-      userId: 'me',
-      id: id,
-    });
+    const messageRes = await this.gmailService
+      .gmail(access_token)
+      .users.messages.get({
+        userId: 'me',
+        id: id,
+      });
     const messageResData = messageRes.data;
 
     const payload = messageRes.data.payload;
@@ -142,11 +141,7 @@ export class MessagesService {
     accessToken: string,
     { labelIds, pageToken }: { labelIds?: string[]; pageToken?: string },
   ) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
-    const gmail = google.gmail({ version: 'v1', auth });
-    const res = await gmail.users.messages.list({
+    const res = await this.gmailService.gmail(accessToken).users.messages.list({
       userId: 'me',
       pageToken,
       labelIds,
@@ -170,15 +165,13 @@ export class MessagesService {
   }
 
   async toTrashMessage(access_token: string, id: string) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
     try {
-      const res = await gmail.users.messages.trash({
-        userId: 'me',
-        id,
-      });
+      const res = await this.gmailService
+        .gmail(access_token)
+        .users.messages.trash({
+          userId: 'me',
+          id,
+        });
       return res.data;
     } catch (error) {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
@@ -186,19 +179,17 @@ export class MessagesService {
   }
 
   async toTrashBatch(access_token: string, ids: string[]) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
     try {
-      const res = await gmail.users.messages.batchModify({
-        userId: 'me',
-        requestBody: {
-          ids,
-          addLabelIds: ['TRASH'],
-          removeLabelIds: [],
-        },
-      });
+      const res = await this.gmailService
+        .gmail(access_token)
+        .users.messages.batchModify({
+          userId: 'me',
+          requestBody: {
+            ids,
+            addLabelIds: ['TRASH'],
+            removeLabelIds: [],
+          },
+        });
       return res.data;
     } catch (error) {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
@@ -206,19 +197,17 @@ export class MessagesService {
   }
 
   async toSpamMessage(access_token: string, id: string) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
     try {
-      const res = await gmail.users.messages.modify({
-        userId: 'me',
-        id,
-        requestBody: {
-          addLabelIds: ['SPAM'],
-          removeLabelIds: [],
-        },
-      });
+      const res = await this.gmailService
+        .gmail(access_token)
+        .users.messages.modify({
+          userId: 'me',
+          id,
+          requestBody: {
+            addLabelIds: ['SPAM'],
+            removeLabelIds: [],
+          },
+        });
       return res.data;
     } catch (error) {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
@@ -226,38 +215,34 @@ export class MessagesService {
   }
 
   async markUnread(access_token: string, id: string) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
     try {
-      const res = await gmail.users.messages.modify({
-        userId: 'me',
-        id,
-        requestBody: {
-          addLabelIds: ['UNREAD'],
-          removeLabelIds: [],
-        },
-      });
+      const res = await this.gmailService
+        .gmail(access_token)
+        .users.messages.modify({
+          userId: 'me',
+          id,
+          requestBody: {
+            addLabelIds: ['UNREAD'],
+            removeLabelIds: [],
+          },
+        });
       return res.data;
     } catch (error) {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
     }
   }
   async markAsRead(access_token: string, id: string) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
     try {
-      const res = await gmail.users.messages.modify({
-        userId: 'me',
-        id,
-        requestBody: {
-          addLabelIds: [],
-          removeLabelIds: ['UNREAD'],
-        },
-      });
+      const res = await this.gmailService
+        .gmail(access_token)
+        .users.messages.modify({
+          userId: 'me',
+          id,
+          requestBody: {
+            addLabelIds: [],
+            removeLabelIds: ['UNREAD'],
+          },
+        });
       return res.data;
     } catch (error) {
       throw new HttpException('Something went wrong', HttpStatus.BAD_REQUEST);
@@ -265,15 +250,13 @@ export class MessagesService {
   }
 
   async getAttachment(access_token: string, id: string, attachmentId: string) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
-    const res = await gmail.users.messages.attachments.get({
-      userId: 'me',
-      messageId: id,
-      id: attachmentId,
-    });
+    const res = await this.gmailService
+      .gmail(access_token)
+      .users.messages.attachments.get({
+        userId: 'me',
+        messageId: id,
+        id: attachmentId,
+      });
     function convertBase64UrlToBase64(base64Url: string) {
       let base64 = base64Url.replace(/_/g, '/').replace(/-/g, '+');
       switch (base64.length % 4) {
@@ -351,12 +334,7 @@ export class MessagesService {
     access_token: string;
     threadId: string;
   }) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-
-    const gmail = google.gmail({ version: 'v1', auth });
-
-    const res = await gmail.users.threads.get({
+    const res = await this.gmailService.gmail(access_token).users.threads.get({
       userId: 'me',
       id: threadId,
     });
@@ -371,10 +349,6 @@ export class MessagesService {
   }
 
   async sendReply(access_token: string, text: string, messageId: string) {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-    const gmail = google.gmail({ version: 'v1', auth });
-
     const originalMessage = (await this.getOneMessage({
       id: messageId,
       access_token,
@@ -441,13 +415,15 @@ export class MessagesService {
       .replace(/=+$/, '');
 
     try {
-      const result = await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedMessage,
-          threadId: originalMessage.threadId,
-        },
-      });
+      const result = await this.gmailService
+        .gmail(access_token)
+        .users.messages.send({
+          userId: 'me',
+          requestBody: {
+            raw: encodedMessage,
+            threadId: originalMessage.threadId,
+          },
+        });
 
       return result.data;
     } catch (error) {
@@ -460,13 +436,7 @@ export class MessagesService {
     access_token: string,
     { to, subject, message }: { to: string; subject: string; message: string },
   ) {
-    console.log('in message send');
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: access_token });
-    const gmail = google.gmail({ version: 'v1', auth });
-
     const emailContent = [
-      // `To: ${to}`,
       `To: ${to}`,
       `Subject: ${subject}`,
       `MIME-Version: 1.0`,
@@ -495,12 +465,14 @@ export class MessagesService {
       .replace(/=+$/, '');
 
     try {
-      const result = await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedMessage,
-        },
-      });
+      const result = await this.gmailService
+        .gmail(access_token)
+        .users.messages.send({
+          userId: 'me',
+          requestBody: {
+            raw: encodedMessage,
+          },
+        });
 
       return result.data;
     } catch (error) {
