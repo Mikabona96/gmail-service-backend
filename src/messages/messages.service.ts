@@ -1,27 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { gmail_v1 } from 'googleapis';
-import { MessageType } from './types';
+import { LabelIds, MessageType } from './types';
 import { GmailService } from 'src/common/providers/gmail.service';
-
 @Injectable()
 export class MessagesService {
   constructor(private readonly gmailService: GmailService) {}
-  //TODO add pageToken props to getMessages
-  labelIds = [
-    'INBOX',
-    'SPAM',
-    'TRASH',
-    'UNREAD',
-    'STARRED',
-    'IMPORTANT',
-    'SENT',
-    'DRAFT',
-    'CATEGORY_PERSONAL',
-    'CATEGORY_SOCIAL',
-    'CATEGORY_PROMOTIONS',
-    'CATEGORY_UPDATES',
-    'CATEGORY_FORUMS',
-  ];
 
   getOneMessage = async ({
     id,
@@ -180,13 +163,14 @@ export class MessagesService {
 
   async toTrashBatch(access_token: string, ids: string[]) {
     try {
+      const labelIds: LabelIds[] = [LabelIds.TRASH];
       const res = await this.gmailService
         .gmail(access_token)
         .users.messages.batchModify({
           userId: 'me',
           requestBody: {
             ids,
-            addLabelIds: ['TRASH'],
+            addLabelIds: labelIds,
             removeLabelIds: [],
           },
         });
@@ -198,13 +182,14 @@ export class MessagesService {
 
   async toSpamMessage(access_token: string, id: string) {
     try {
+      const labelIds: LabelIds[] = [LabelIds.SPAM];
       const res = await this.gmailService
         .gmail(access_token)
         .users.messages.modify({
           userId: 'me',
           id,
           requestBody: {
-            addLabelIds: ['SPAM'],
+            addLabelIds: labelIds,
             removeLabelIds: [],
           },
         });
@@ -216,13 +201,14 @@ export class MessagesService {
 
   async markUnread(access_token: string, id: string) {
     try {
+      const labelIds: LabelIds[] = [LabelIds.UNREAD];
       const res = await this.gmailService
         .gmail(access_token)
         .users.messages.modify({
           userId: 'me',
           id,
           requestBody: {
-            addLabelIds: ['UNREAD'],
+            addLabelIds: labelIds,
             removeLabelIds: [],
           },
         });
@@ -233,6 +219,7 @@ export class MessagesService {
   }
   async markAsRead(access_token: string, id: string) {
     try {
+      const labelIds: LabelIds[] = [LabelIds.UNREAD];
       const res = await this.gmailService
         .gmail(access_token)
         .users.messages.modify({
@@ -240,7 +227,7 @@ export class MessagesService {
           id,
           requestBody: {
             addLabelIds: [],
-            removeLabelIds: ['UNREAD'],
+            removeLabelIds: labelIds,
           },
         });
       return res.data;
